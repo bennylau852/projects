@@ -1,0 +1,41 @@
+<products>
+book
+Where the Wild Things Are
+19.99
+20
+978-0064431781
+Maurice Sendak
+clothing
+Men's Fitted Henley
+39.99
+25
+Medium
+J. Crew
+book
+The Great Gatsby
+23.5
+5
+978-0743273565
+Scott Fitzgerald
+movie
+Gone With the Wind DVD
+15.99
+3
+Drama
+R
+</products>
+<users>
+billclinton 30 120 1
+stevejobs 36 50 1
+jackma 188 100 0
+</users>
+<reviews>
+Where the Wild Things Are
+1 2013-12-25 I loved this as a kid! 
+Men's Fitted Henley
+2 2014-12-25 Perfect gift for my husband! 
+Scott Fitzgerald
+3 2013-04-05 Compelling read about the American dream
+Gone With the Wind DVD
+4 2013-07-05 Beautiful. Simply beautiful
+</reviews>
