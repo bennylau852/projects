@@ -17,11 +17,6 @@ class Product{
   virtual std::set<std::string> keywords() const = 0;
 
   /**
-   * Allows for a more detailed search beyond simple keywords
-   */
-  virtual bool isMatch(std::vector<std::string>& searchTerms) const;
-
-  /**
    * Returns a string to display the product info for hits of the search. Call if user's keyword(s) mataches one belonging to this product 
    */
   virtual std::string displayString() const = 0;
@@ -40,7 +35,7 @@ class Product{
   int getQty() const;
   void subtractQty(int num);
 
-  int average_rating;
+  double average_rating;
  
  protected:
   std::string category_;

@@ -52,11 +52,9 @@ using namespace std;
 
     bool operator()(Product* lhs, Product* rhs) {
 
-        int left = lhs->average_rating;
+        double left = lhs->average_rating;
 
-        int right = rhs->average_rating;
-
-        cout << left << " " << right << endl;
+        double right = rhs->average_rating;
 
         return left > right;
 
@@ -141,6 +139,8 @@ using namespace std;
     }
 
   };
+
+  
 
 template <class T, class Comparator>
 void merge(vector<T>&, Comparator, int, int, int);

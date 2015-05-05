@@ -5,15 +5,16 @@ using namespace std;
 
 MainWindow::MainWindow() {
 
+
 }
 
 MainWindow::MainWindow(TaoBao& datastore) { //For instantiating the main QT window
 
+    //Gets reference/pointer to datastore object instantiated in main
     ds = &datastore;
 
-    is_main = true;
-
-    //Gets reference to datastore object instantiated in main
+    //Assigns the account holder to login information
+    user = ds->current_user;
 
     //Overall layout of GUI
     overall_layout = new QVBoxLayout();
@@ -30,25 +31,28 @@ MainWindow::MainWindow(TaoBao& datastore) { //For instantiating the main QT wind
     search_interface = new QHBoxLayout();
     overall_layout->addLayout(search_interface);
 
-    //Customers layout
-    customers_layout = new QVBoxLayout();
-    search_interface->addLayout(customers_layout);
+    //Product recommendation layout
+    product_rec_layout = new QVBoxLayout();
+    search_interface->addLayout(product_rec_layout);
 
-    //Customers label
-    customers_label = new QLabel("Please select your account");
-    customers_layout->addWidget(customers_label);
+    //Product recommendation label
+    product_rec_label = new QLabel("Product recommendation");
+    product_rec_layout->addWidget(product_rec_label);
 
-    //List of customers in database
-    customers_list = new QListWidget();
-    customers_layout->addWidget(customers_list);
+    //Recommended product to account holder
+    top_product = ds->product_recommendation(user);
 
-    //Adds each customer in the database into the list
+    //List containing the product recommendation
+    product_rec_list = new QListWidget();
+    product_rec_layout->addWidget(product_rec_list);
+    product_rec_list->addItem(QString::fromStdString(top_product->getName()));
 
-    for (map<string, User*>::iterator it = ds->customers.begin(); it != ds->customers.end(); ++it) {
+    //Add product recommendation to cart button
+    product_rec_button = new QPushButton("Add recommendation to cart");
+    product_rec_layout->addWidget(product_rec_button);
 
-        customers_list->addItem(QString::fromStdString(it->first));
-
-    }
+    //Adds product recommendation to cart
+    connect(product_rec_button, SIGNAL(clicked()), this, SLOT(add_product_rec_to_cart()));
 
     //List of product matches layout
     product_matches_layout = new QVBoxLayout();
@@ -257,11 +261,9 @@ MainWindow::MainWindow(TaoBao& datastore) { //For instantiating the main QT wind
     or_ = false;
 
     //Changes QT main window size
-
     resize(QDesktopWidget().availableGeometry(this).size() * 0.9);
 
     //Sets the overall layout of QT main window
-
     setLayout(overall_layout);
 
 }
@@ -269,8 +271,6 @@ MainWindow::MainWindow(TaoBao& datastore) { //For instantiating the main QT wind
 MainWindow::MainWindow(TaoBao& passed_datastore, string user) {
 
     ds = &passed_datastore;
-
-    is_main = false;
 
     customer_name = user;
 
@@ -341,6 +341,67 @@ MainWindow::MainWindow(TaoBao& passed_datastore, string user) {
     }
 
     setLayout(overall_layout);
+
+}
+
+MainWindow::MainWindow(TaoBao& datastore, bool* not_hacker) {
+
+    ds = &datastore;
+
+    not_hack = not_hacker;
+
+    login_layout = new QVBoxLayout();
+
+    login_greeting_layout = new QHBoxLayout();
+    login_layout->addLayout(login_greeting_layout);
+
+    login_greeting = new QLabel("Welcome to TaoBao, China's largest online shopping marketplace");
+    login_greeting_layout->addWidget(login_greeting);
+
+    request_layout = new QHBoxLayout();
+    login_layout->addLayout(request_layout);
+
+    request = new QLabel("Please enter your login information");
+    request_layout->addWidget(request);
+
+    user_input_layout = new QHBoxLayout();
+    login_layout->addLayout(user_input_layout);
+
+    user_layout = new QVBoxLayout();
+    user_input_layout->addLayout(user_layout);
+
+    user_label = new QLabel("Username");
+    user_layout->addWidget(user_label);
+
+    username = new QLineEdit();
+    user_layout->addWidget(username);
+
+    password_layout = new QVBoxLayout();
+    user_input_layout->addLayout(password_layout);
+
+    password_label = new QLabel("Password");
+    password_layout->addWidget(password_label);
+
+    password = new QLineEdit();
+    password_layout->addWidget(password);
+
+    buttons_layout = new QHBoxLayout();
+    login_layout->addLayout(buttons_layout);
+
+    login_button = new QPushButton("Login");
+    buttons_layout->addWidget(login_button);
+
+    connect(login_button, SIGNAL(clicked()), this, SLOT(verify_user()));
+
+    quit_button = new QPushButton("Quit");
+    buttons_layout->addWidget(quit_button);
+
+    connect(quit_button, SIGNAL(clicked()), this, SLOT(close()));
+
+    //new_user_button = new QPushButton("New User");
+    //buttons_layout->addWidget(new_user_button);
+
+    setLayout(login_layout);
 
 }
 
@@ -487,7 +548,7 @@ void MainWindow::get_reviews_for_product() { //Make something for no reviews
 
         }
 
-        list_of_reviews->clear(); //Clears all items in lis of review matches for previously selected product
+        list_of_reviews->clear(); //Clears all items in list of review matches for previously selected product
 
         selected_review_info->setText(""); //Clears the QLabel holding the string for the current review
 
@@ -542,6 +603,8 @@ void MainWindow::display_selected_review(int reviewIndex) {
 
 void MainWindow::add_new_review() {
 
+    string name = user->getName();
+
     if (date_input->text().isEmpty() || rating_input->text().isEmpty() || review_text_input->toPlainText().isEmpty()) {
 
         return; // Return if the date, rating, or text input field is left blank
@@ -556,35 +619,117 @@ void MainWindow::add_new_review() {
 
     string date = date_input->text().toStdString(); //Retrieves string from date input box
 
-    date_input->setText(""); 
+    int year;
+
+    char trash1;
+
+    int month;
+
+    char trash2;
+
+    int day;
+
+    stringstream ss1;
+
+    ss1 << date;
+
+    ss1 >> year;
+
+    ss1 >> trash1;
+
+    ss1 >> month;
+
+    ss1 >> trash2;
+
+    ss1 >> day;
+
+    if (year < 1900 || year > 2015) {
+
+        date_input->setText(""); 
+
+        return;
+
+    }
+
+    if (month < 1 || month > 12) {
+
+        date_input->setText(""); 
+
+        return;
+
+    }
+
+    if (day < 1 || day > 31) {
+
+        date_input->setText(""); 
+
+        return;
+
+    }
 
     string rating = rating_input->text().toStdString(); //Retrieves rating from rating input box
 
-    rating_input->setText(""); 
-
     int score;
 
-    stringstream ss;
+    stringstream ss2;
 
-    ss << rating;
+    ss2 << rating;
 
-    ss >> score; //Converts the rating into an integer 
+    ss2 >> score; //Converts the rating into an integer 
+
+    if (score < 1 || score > 5) {
+
+        rating_input->setText(""); 
+
+        return;
+
+    }
 
     string review = review_text_input->toPlainText().toStdString(); //Retrieves review text from review text input box
 
-    review_text_input->setPlainText(""); 
+    if (review.size() == 0) {
+
+        review_text_input->setPlainText(""); 
+
+        return;
+
+    }
 
     QListWidgetItem* current_product = product_matches_list->currentItem(); //Gets the currently selected product item
 
     string product = current_product->text().toStdString(); //Gets the name of product from the product item
 
-    Review* fresh = new Review(product, score, date, review); //Dynamically allocates/instantiates a new review object
+    Review* fresh = new Review(product, score, name, date, review); //Dynamically allocates/instantiates a new review object
 
     ds->addReview(fresh); //Adds new review to the database
 
     ds->all_reviews.push_back(fresh); //Pushes the new review into the database's vector of all reviews
 
+    date_input->setText(""); 
+
+    rating_input->setText(""); 
+
+    review_text_input->setPlainText(""); 
+
     get_reviews_for_product(); //Calls the function to add the review to the list of mergesorted reviews 
+
+}
+
+void MainWindow::add_product_rec_to_cart() {
+
+    if (product_rec_list->count() < 1) {
+
+        return; //Returns if no products in the product list 
+
+    }
+
+    vector<Product*> rec_good;
+
+    rec_good.push_back(top_product);
+
+    string username = user->getName();
+
+    ds->add_to_cart(username, 1, rec_good); //Adds the product to the user's cart
 
 }
 
@@ -592,27 +737,23 @@ void MainWindow::add_user_cart() {
 
     if (product_matches_list->count() < 1) {
 
-        return; //Returns if no products in the product list 
+        return; //Returns if no products in the product recommendation list 
 
     }
 
-    QListWidgetItem* current_buyer = customers_list->currentItem(); //Gets the user currently selected
-
-    string user = current_buyer->text().toStdString(); //Gets the name of the user
+    string username = user->getName();
 
     int current_row = product_matches_list->currentRow(); //Gets the index of the currently selected product 
 
-    ds->add_to_cart(user, current_row+1, product_matches); //Adds the product to the user's cart
+    ds->add_to_cart(username, current_row+1, product_matches); //Adds the product to the user's cart
 
 }
 
 void MainWindow::view_user_cart() {
 
-    QListWidgetItem* current_buyer = customers_list->currentItem(); //Gets user currently selected
+    string username = user->getName();
 
-    string user = current_buyer->text().toStdString(); //Gets the name of the user
-
-    MainWindow* cart = new MainWindow(*ds, user); //Instantiates a new QT window for user's cart
+    MainWindow* cart = new MainWindow(*ds, username); //Instantiates a new QT window for user's cart
 
     cart->show(); //Shows QT window
 
@@ -763,5 +904,103 @@ void MainWindow::save_to_file() { //Do error checking for ofile
     ds->dump(ofile); //Dumps database into output file
 
     ofile.close(); //Closes output file
+
+}
+
+/*
+
+
+Additions
+
+
+*/
+
+void MainWindow::verify_user() {
+
+    string username_input = username->text().toStdString(); 
+
+    string password_input = password->text().toStdString(); 
+
+    if (username_input.size() == 0 || password_input.size() == 0 || password_input.size() > 8) {
+
+        return; //Returns if no words entered
+
+    }
+
+    for (unsigned int i = 0; i < password_input.size(); i++) {
+
+        if (iswspace(password_input[i]) ) {
+
+            incorrect_layout = new QHBoxLayout();
+
+            login_layout->addLayout(incorrect_layout);
+
+            incorrect = new QLabel("Invalid username or password. Please try again");
+
+            incorrect_layout->addWidget(incorrect);
+
+            username->setText(""); 
+
+            password->setText(""); 
+
+            return;
+
+        }
+
+    }
+
+    string user_password = ds->hash_password(password_input);
+
+    map<string, User*>::iterator it = ds->customers.find(username_input);
+
+    if (it != ds->customers.end() ) {
+
+        User* client = it->second;
+
+        string actual_password = client->getPassword();
+
+        if (user_password == actual_password) {
+
+            *not_hack = true; //Allows for main window
+
+            ds->current_user = client;
+
+            this->close();
+
+        }
+
+        else {
+
+            incorrect_layout = new QHBoxLayout();
+
+            login_layout->addLayout(incorrect_layout);
+
+            incorrect = new QLabel("Invalid username or password. Please try again");
+
+            incorrect_layout->addWidget(incorrect);
+
+            username->setText(""); 
+
+            password->setText(""); 
+
+        }
+
+    }
+
+    else {
+
+            incorrect_layout = new QHBoxLayout();
+
+            login_layout->addLayout(incorrect_layout);
+
+            incorrect = new QLabel("Invalid username or password. Please try again");
+
+            incorrect_layout->addWidget(incorrect);
+
+            username->setText(""); 
+
+            password->setText(""); 
+        
+    }
 
 }

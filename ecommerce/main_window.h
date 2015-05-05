@@ -24,12 +24,12 @@
 #include <map>
 #include <fstream>
 
-//HW5 headers needed
 #include "taobao.h" //For instantianting data store and accessing data member functions
 #include "product.h" //For accessing product member functions
 #include "review.h" //For instantiating review objects
 #include "mergesort.h" //To mergesort product and review matches
 #include "user.h" //For accessing user member functions
+#include <wctype.h>
 
 class MainWindow : public QWidget {
     Q_OBJECT
@@ -37,14 +37,13 @@ class MainWindow : public QWidget {
 public:
     MainWindow();
     MainWindow(TaoBao& datastore);
-    MainWindow(TaoBao& passed_datastore, string user);
+    MainWindow(TaoBao& passed_datastore, std::string user);
+    MainWindow(TaoBao& datastore, bool* not_hacker);
     ~MainWindow();
 
 private:
 
-    bool is_main;
-
-    //Datastore object
+    //Datastore pointer 
     TaoBao* ds;
 
     //Overall layout of GUI
@@ -57,10 +56,11 @@ private:
     //Main layout for products and search
     QHBoxLayout* search_interface;
 
-    //Customers layout
-    QVBoxLayout* customers_layout; 
-    QLabel* customers_label;
-    QListWidget* customers_list;
+    //Product recommendation layout
+    QVBoxLayout* product_rec_layout; 
+    QLabel* product_rec_label;
+    QListWidget* product_rec_list;
+    QPushButton* product_rec_button;
 
     //Product information layout
     QVBoxLayout* product_layout;
@@ -151,6 +151,57 @@ private:
     QPushButton* remove_product_button;
     vector<Product*> cart_products;
 
+    /*
+
+    For login window
+
+    */
+
+    QVBoxLayout* login_layout;
+
+    QHBoxLayout* login_greeting_layout;
+
+    QHBoxLayout* request_layout;
+
+    QLabel* login_greeting;
+
+    QLabel* request;
+
+    QHBoxLayout* user_input_layout;
+
+    QVBoxLayout* user_layout;
+
+    QLabel* user_label;
+
+    QLineEdit* username;
+
+    QVBoxLayout* password_layout;
+
+    QLabel* password_label;
+
+    QLineEdit* password;
+
+    QHBoxLayout* buttons_layout;
+
+    QPushButton* login_button;
+
+    QPushButton* quit_button;
+
+    //QPushButton* new_user_button;
+
+    QLabel* incorrect;
+
+    QHBoxLayout* incorrect_layout;
+
+    //Determines whether or not to instantiate main window
+    bool* not_hack;
+
+    //Account holder 
+    User* user;
+
+    //Product to be recommended to the account holder
+    Product* top_product;
+
 public slots:
 
     void and_search();
@@ -160,6 +211,8 @@ public slots:
     void search_taobao();
 
     void display_product_information(int productIndex);
+
+    void add_product_rec_to_cart();
 
     void add_user_cart();
 
@@ -180,6 +233,15 @@ public slots:
     void add_new_review();
 
     void save_to_file();
+
+    /*
+
+    Additions
+
+    */
+
+
+    void verify_user();
 
 };
 #endif

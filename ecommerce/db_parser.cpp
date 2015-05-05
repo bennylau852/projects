@@ -174,6 +174,8 @@ User* DBParser::parseUser(istream& is)
   int age;
   double balance;
   int type;
+  string password; //P4 add-on
+
   is >> username;
   if( is.fail() ){
     error_ = true;
@@ -194,17 +196,23 @@ User* DBParser::parseUser(istream& is)
     error_ = true;
     errorMsg_ = "Unable to read type";
   }
+  is >> password;
+  if( is.fail() ){
+    error_ = true;
+    errorMsg_ = "Unable to read password";
+  }
   if(error_){
     return NULL;
   }
   else {
-    return new User(username, age, balance, type);
+    return new User(username, age, balance, type, password);
   }
 }
 
 Review* DBParser::parseReview(istream& is, string prodname)
 {
   int rating;
+  string user;
   string date;
   string review_text;
   string line;
@@ -212,6 +220,11 @@ Review* DBParser::parseReview(istream& is, string prodname)
   if( is.fail() || (rating < 1 || rating > 5) ){
     error_ = true;
     errorMsg_ = "Unable to read rating";
+  }
+  is >> user;
+  if( is.fail() ){
+    error_ = true;
+    errorMsg_ = "Unable to read user";
   }
   is >> date;
   if( is.fail() ){
@@ -235,14 +248,14 @@ Review* DBParser::parseReview(istream& is, string prodname)
     return NULL;
   }
   else {
-    return makeReview(prodname, rating, date, review_text);
+    return makeReview(prodname, rating, user, date, review_text);
   }
 
 }
 
-Review* DBParser::makeReview(string& prodname, int& rating, string& date, string& review_text)
+Review* DBParser::makeReview(string& prodname, int& rating, string& user, string& date, string& review_text)
 {
-  return new Review(prodname, rating, date, review_text);
+  return new Review(prodname, rating, user, date, review_text);
 }
 
 

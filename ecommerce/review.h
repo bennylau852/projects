@@ -11,6 +11,7 @@ struct Review
   Review(); // :  prodName(), rating(), date(), reviewText() { }
   Review(std::string& prod, 
 	 int& rate, 
+   std::string user,
 	 std::string& d, 
 	 std::string& review_text); // : prodName(prod), rating(rate), date(d), reviewText(review_text) { }
 
@@ -20,6 +21,7 @@ struct Review
   
   std::string prodName;
   int rating;
+  std::string username;
   std::string date;
   std::string reviewText;
 };

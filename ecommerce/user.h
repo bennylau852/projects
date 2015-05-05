@@ -2,15 +2,12 @@
 #define USER_H
 #include <iostream>
 #include <string>
+#include <sstream>
 
-/**
- * Implements User functionality and information storage
- *  You should not need to derive anything from User at this time
- */
 class User{
  public:
   User();
-  User(std::string name, int age, double balance, int type);
+  User(std::string name, int age, double balance, int type, std::string password);
   virtual ~User();
 
   int getAge() const;
@@ -19,10 +16,13 @@ class User{
   void deductAmount(double amt);
   virtual void dump(std::ostream& os);
 
+  std::string getPassword() const;
+
  private:
   std::string name_;
   int age_;
   double balance_;
   int type_;
+  std::string password_;
 };
 #endif

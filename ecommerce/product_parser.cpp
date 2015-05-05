@@ -132,6 +132,7 @@ Product* ProductBookParser::parseSpecificProduct(std::string category,
   if(error){
     return NULL;
   }
+  category = "book";
   return makeProduct();
     
 }
@@ -188,6 +189,7 @@ Product* ProductClothingParser::parseSpecificProduct(std::string category,
   if(error){
     return NULL;
   }
+  category = "clothing";
   return makeProduct();
     
 }
@@ -249,6 +251,7 @@ Product* ProductMovieParser::parseSpecificProduct(std::string category,
   if(error){
     return NULL;
   }
+  category = "movie";
   return makeProduct();
     
 }

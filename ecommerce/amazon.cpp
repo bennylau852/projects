@@ -19,7 +19,6 @@
 
 using namespace std;
 
-/* Prototypes */
 void displayProducts(vector<Product*>& hits, TaoBao& ds);
 
 int main(int argc, char* argv[]) {
@@ -28,22 +27,17 @@ int main(int argc, char* argv[]) {
         cerr << "Please specify a database file" << endl;
     }
 
-    /****************
-     * Declare your derived DataStore object here replacing
-     *  DataStore type to your derived type
-     ****************/
     TaoBao ds; //TaoBao is China's version of Amazon
 
 
     // Instantiate the parser
     DBParser parser;
 
-    // Instantiate the individual product parsers we want
+    // Instantiating the individual product parsers 
     parser.addProductParser(new ProductBookParser);
     parser.addProductParser(new ProductClothingParser);
     parser.addProductParser(new ProductMovieParser);
 
-    // Now parse the database to populate the DataStore
     if( parser.parse(argv[1], ds) ) {
 
         cerr << "Error parsing!" << endl;
@@ -52,31 +46,74 @@ int main(int argc, char* argv[]) {
 
     }
 
-    //Computes and assigns the average rating of all products in the database
+    /*
 
-    for (unsigned int i = 0; i < ds.all_products.size(); i++) { 
+    1) Computes average rating for all products in database
+
+    2) For each review, gets the customer name and adds it to a data structure keeping track of users
+        and the products they reviewed
+
+    */
+
+    for (unsigned int i = 0; i < ds.all_products.size(); i++) { //For each product in the database
 
         string product_name = ds.all_products[i]->getName(); 
 
-        int sum = 0;
+        double sum = 0.0;
 
-        int counter = 0;
+        double counter = 0.0;
 
-        int average_rating = 0;
+        double average_rating = 0.0; //By default is 0 if no reviews
 
-        map<string, vector<Review*> >::iterator it = ds.reviews_bank.find(product_name); //Finds the vector of reviews (if any) for the given product
+        string name;
 
-        if (it != ds.reviews_bank.end()) {
+        string name2;
 
-            for (unsigned int j = 0; j < it->second.size(); j++) {
+        map<string, vector<Review*> >::iterator it = ds.reviews_bank.find(product_name); 
 
-                sum += it->second[j]->rating; //Adds the rating from each review to the sum
+        if (it != ds.reviews_bank.end()) { //If reviews for the current product exist
+
+            for (unsigned int j = 0; j < it->second.size(); j++) { 
+
+                sum += it->second[j]->rating; //Adds the rating from each review to a running sum
 
                 counter++;
 
+                name = it->second[j]->username; 
+
+                map<string, User*>::iterator it11 = ds.customers.find(name); //Finds the user who wrote the review
+
+                if (it11 != ds.customers.end() ) { 
+
+                    User* current_user_for_review = it11->second; 
+
+                    map<User*, set<Product*> >::iterator it12 = ds.product_user_reviews.find(current_user_for_review); //Finds the set of products that the user has reviewed
+
+                    if (it12 == ds.product_user_reviews.end() ) { //If the set currently does not exist
+
+                        set<Product*> cart; 
+
+                        cart.insert(ds.all_products[i]); 
+
+                        ds.product_user_reviews.insert(make_pair(current_user_for_review, cart)); //Makes a new set
+
+                    }
+
+                    else { 
+
+                        it12->second.insert(ds.all_products[i]); //Puts product in user's existing product set
+
+                    }
+
+                }
+
             }
 
-            average_rating = sum/counter;
+            if (sum != 0.0) {
+
+                average_rating = sum/counter;  
+
+            }
 
         }
 
@@ -86,129 +123,25 @@ int main(int argc, char* argv[]) {
 
     QApplication app(argc, argv);
 
+    bool not_hacker = false;
+
+    MainWindow mainwindow_login(ds, &not_hacker);
+
+    mainwindow_login.show();
+
+    app.exec();
+
+    if (not_hacker == true) {
+
     MainWindow mainwindow(ds);
 
     mainwindow.show();
 
     app.exec();
 
-    /*
-
-    cout << "=====================================" << endl;
-    cout << "Menu: " << endl;
-    cout << "  AND term term ...                  " << endl;
-    cout << "  OR term term ...                   " << endl;
-    cout << "  ADD username search_hit_number     " << endl;
-    cout << "  VIEWCART username                  " << endl;
-    cout << "  BUYCART username                   " << endl;
-    cout << "  QUIT new_db_filename               " << endl;
-    cout << "====================================" << endl;
-
-    vector<Product*> hits;
-
-    bool done = false;
-    while(!done) {
-        cout << "\nEnter search terms: " << endl;
-        string line;
-        getline(cin,line);
-        stringstream ss(line);
-        string cmd;
-        if((ss >> cmd)) {
-            if( cmd == "AND") {
-                string term;
-                vector<string> terms;
-                while(ss >> term) {
-                    term = convToLower(term);
-                    terms.push_back(term);
-                }
-                hits = ds.search(terms, 0);
-                if (hits.size() == 0) {
-
-                    cout << "Not found. Try Again" << endl;
-
-                    continue;
-
-                }
-                displayProducts(hits, ds);
-            } else if ( cmd == "OR" ) {
-                string term;
-                vector<string> terms;
-                while(ss >> term) {
-                    term = convToLower(term);
-                    terms.push_back(term);
-                }
-                hits = ds.search(terms, 1);
-                if (hits.size() == 0) {
-
-                    cout << "Not found. Try Again" << endl;
-
-                    continue;
-
-                }
-                displayProducts(hits, ds);
-            } else if ( cmd == "QUIT") {
-                string filename;
-                if(ss >> filename) {
-                    ofstream ofile(filename.c_str());
-                    ds.dump(ofile);
-                    ofile.close();
-                }
-                done = true;
-            }
-
-            //ADD support for other command here
-
-            else if ( cmd == "ADD") {
-                string name;
-                int index;
-                ss >> name;
-                ss >> index;
-                ds.add_to_cart(name, index, hits);
-            } else if ( cmd == "VIEWCART") {
-                string name;
-                ss >> name;
-                ds.view_cart(name);
-            }
-
-            else if ( cmd == "BUYCART") {
-                string name;
-                ss >> name;
-                ds.buy_cart(name);
-            } else if ( cmd == "QUIT") {
-                string filename;
-                ss >> filename;
-                ofstream ofile (filename.c_str());
-                ds.dump(ofile);
-                ofile.close();
-
-                for (unsigned int i = 0; i < ds.all_products.size(); i++) {
-
-                    delete ds.all_products[i];
-
-                }
-
-                for(map<string, User*>::iterator it = ds.customers.begin();
-                        it != ds.customers.end();
-                        ++it) {
-                    delete it->second;
-                }
-
-                for (unsigned int i = 0; i < ds.all_reviews.size(); i++) {
-
-                    delete ds.all_reviews[i];
-
-                }
-
-                return 0;
-
-            }
-
-            else {
-                cout << "Unknown command" << endl;
-            }
-        }
-
     }
+
+    /*
 
     //Deletes all users in the database
 
@@ -237,14 +170,21 @@ int main(int argc, char* argv[]) {
     */
 
     return 0;
+
 }
 
 void displayProducts(vector<Product*>& hits, TaoBao& ds) {
+
     int resultNo = 1;
+
     for(vector<Product*>::iterator it1 = hits.begin(); it1 != hits.end(); ++it1) {
+
         cout << "Hit " << setw(3) << resultNo << endl;
+
         cout << (*it1)->displayString() << endl;
+
         cout << endl;
+
         resultNo++;
 
         string product_name = (*it1)->getName();

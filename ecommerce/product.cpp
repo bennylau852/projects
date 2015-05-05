@@ -5,10 +5,10 @@
 using namespace std;
 
 Product::Product(const std::string category, const std::string name, double price, int qty) : 
+  category_(category),
   name_(name),
   price_(price),
-  qty_(qty),
-  category_(category)
+  qty_(qty)
 {
 
 }
@@ -37,15 +37,6 @@ void Product::subtractQty(int num)
 int Product::getQty() const
 {
   return qty_;
-}
-
-/**
- * default implementation...can be overriden in a future
- * assignment
- */ 
-bool Product::isMatch(std::vector<std::string>& searchTerms) const
-{
-  return false;
 }
 
 void Product::dump(std::ostream& os) const
