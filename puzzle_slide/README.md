@@ -12,7 +12,7 @@ heur is an integer ranging from 0 to 2 inclusive that'll determine which heurist
 
 The A* algorithm uses 3 heuristics: BFS (breadth first search), Manhattan distance (sums the x/y or horizontal/vertical distance the current state of the puzzle board is from the solved state), and Out of place (number of tiles that aren't in their correct places)
 
-Solved states for a 3 by 3 board and a 4 by 4 board: 
+Solved states for a 3 by 3 board and a 4 by 4 board: (View raw for better presentation of board)
 
 +--+--+--+ <br />
 |  | 1| 2| <br />
