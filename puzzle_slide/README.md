@@ -15,7 +15,7 @@ The A* algorithm uses 3 heuristics: BFS (breadth first search), Manhattan distan
 Solved states for a 3 by 3 board and a 4 by 4 board: 
 
 +--+--+--+ <br />
-|" "| 1| 2| <br />
+|  | 1| 2| <br />
 +--+--+--+ <br />
 | 3| 4| 5| <br />
 +--+--+--+ <br />
